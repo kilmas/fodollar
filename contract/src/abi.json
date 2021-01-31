@@ -1,0 +1,210 @@
+{
+  "version": "eosio::abi/1.0",
+  "structs": [
+    {
+      "name": "extended_asset",
+      "base": "",
+      "fields": [
+        {
+          "name": "quantity",
+          "type": "asset"
+        },
+        {
+          "name": "contract",
+          "type": "name"
+        }
+      ]
+    },
+    {
+      "name": "lock",
+      "base": "",
+      "fields": [
+        {
+          "name": "id",
+          "type": "int64"
+        }
+      ]
+    },
+    {
+      "name": "setconfig",
+      "base": "",
+      "fields": [
+        {
+          "name": "id",
+          "type": "int64"
+        },
+        {
+          "name": "data",
+          "type": "int64"
+        }
+      ]
+    },
+    {
+      "name": "uniswap_market",
+      "base": "",
+      "fields": [
+        {
+          "name": "primary",
+          "type": "uint64"
+        },
+        {
+          "name": "tokenx",
+          "type": "extended_asset"
+        },
+        {
+          "name": "tokeny",
+          "type": "extended_asset"
+        },
+        {
+          "name": "total_weights",
+          "type": "float64"
+        }
+      ]
+    },
+    {
+      "name": "market_pool",
+      "base": "",
+      "fields": [
+        {
+          "name": "owner",
+          "type": "name"
+        },
+        {
+          "name": "weights",
+          "type": "float64"
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "base": "",
+      "fields": [
+        {
+          "name": "id",
+          "type": "int8"
+        },
+        {
+          "name": "data",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "mint",
+      "base": "",
+      "fields": [
+        {
+          "name": "id",
+          "type": "int64"
+        },
+        {
+          "name": "account",
+          "type": "name"
+        },
+        {
+          "name": "amount",
+          "type": "asset"
+        },
+        {
+          "name": "rate",
+          "type": "int64"
+        },
+        {
+          "name": "value",
+          "type": "asset"
+        },
+        {
+          "name": "time",
+          "type": "int64"
+        },
+        {
+          "name": "ctime",
+          "type": "int64"
+        },
+        {
+          "name": "status",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "cmint",
+      "base": "",
+      "fields": [
+        {
+          "name": "id",
+          "type": "int64"
+        },
+        {
+          "name": "account",
+          "type": "name"
+        },
+        {
+          "name": "clearer",
+          "type": "name"
+        },
+        {
+          "name": "amount",
+          "type": "asset"
+        },
+        {
+          "name": "value",
+          "type": "asset"
+        },
+        {
+          "name": "time",
+          "type": "int64"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "lock",
+      "type": "lock",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "setconfig",
+      "type": "setconfig",
+      "ricardian_contract": ""
+    }
+  ],
+  "tables": [
+    {
+      "name": "configs",
+      "type": "config",
+      "index_type": "i8",
+      "key_names": ["id"],
+      "key_types": ["int8"]
+    },
+    {
+      "name": "mints",
+      "type": "mint",
+      "index_type": "i64",
+      "key_names": ["id"],
+      "key_types": ["int64"]
+    },
+    {
+      "name": "cmints",
+      "type": "cmint",
+      "index_type": "i64",
+      "key_names": ["id"],
+      "key_types": ["int64"]
+    },
+    {
+      "name": "swapmarket",
+      "index_type": "i64",
+      "key_names": ["primary"],
+      "key_types": ["uint64"],
+      "type": "uniswap_market"
+    },
+    {
+      "name": "swappool",
+      "index_type": "i64",
+      "key_names": ["owner"],
+      "key_types": ["uint64"],
+      "type": "market_pool"
+    }
+  ]
+}
