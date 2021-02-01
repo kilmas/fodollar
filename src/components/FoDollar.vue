@@ -131,9 +131,7 @@
               </b-list-group>
             </div>
             <div class="mb-2 pt-2">
-              <b-alert show variant="primary" v-if="myCMints.length"
-                >你的已被清算列表</b-alert
-              >
+              <b-alert show="!!myCMints.length" variant="primary">你的已被清算列表</b-alert>
               <b-list-group>
                 <b-list-group-item
                   v-for="item in myCMints"
@@ -217,6 +215,49 @@
               </b-list-group>
             </div>
           </b-tab>
+          <b-tab title="USDT">
+            <div class="mb-2 pt-2">
+              <b-alert show variant="primary">FD兑换-->波场 TRC-USDT,直接波场USDT由转账到你的TRC-20地址,扣除0.1USDT手续费</b-alert>
+              <b-alert show>波场账号余额: {{ trxUsdt }} USDT, 如需及时到账金额请小于该余额，可自动转账</b-alert>
+              <b-input-group size="sm" append="FD->USDT" :prepend="`余额:${myFD.balance.quantity}`">
+                <b-form-input v-model="swapFDAmount" type="number" min="10" placeholder="提现金额"></b-form-input>
+              </b-input-group>
+              <b-input-group class="mt-3" size="sm" append="">
+                <b-form-input v-model="cexAccount" size="sm" placeholder="交易所充值trc-usdt/波场地址(T开头"></b-form-input>
+                <b-input-group-append>
+                  <b-button size="sm" variant="primary" @click="outToUSDT">获取</b-button>
+                </b-input-group-append>
+              </b-input-group>
+            </div>
+            <div class="mb-2 pt-2">
+              <b-alert show variant="primary">你的兑换列表</b-alert>
+              <b-list-group>
+                <b-list-group-item
+                  v-for="item in myFDWds"
+                  :key="item.id"
+                  class="flex-column align-items-start"
+                >
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">{{ item.amount }}</h6>
+                    <small>状态:{{ item.wdid === '0000000000000000000000000000000000000000000000000000000000000000' ? '未转账': '已转账'}}</small>
+                  </div>
+                  <p class="mb-1">
+                    兑换时间:{{
+                      moment(item.time / 1000).format("YYYY/MM/DD HH:mm:ss")
+                    }}
+                  </p>
+                  <b-button
+                    size="sm"
+                    block
+                    @click="getFDByUSDT(item)"
+                    variant="primary"
+                    :disabled="item.wdid === '0000000000000000000000000000000000000000000000000000000000000000'"
+                    >还USDT返回FD</b-button
+                  >
+                </b-list-group-item>
+              </b-list-group>
+            </div>
+          </b-tab>
         </b-tabs>
       </div>
       <footer class="d-flex justify-content-center">
@@ -227,7 +268,13 @@
         </p>
       </footer>
     </main>
-    <b-modal v-model="tranHash" centered :hide-header="!tranTitle" :title="tranTitle" hide-footer>
+    <b-modal
+      v-model="tranHash"
+      centered
+      :hide-header="!tranTitle"
+      :title="tranTitle"
+      hide-footer
+    >
       <div :class="tranText">{{ tranMsg }}</div>
     </b-modal>
     <b-modal
@@ -275,7 +322,7 @@
         >
         <b-list-group-item
           >6.FD 可在foctc
-          出金成为USDT，也可以通过，通过foctc返回相应的FD</b-list-group-item
+          出金成为USDT，也可以通过foctc返回相应的提现单FD</b-list-group-item
         >
       </b-list-group>
     </b-modal>
@@ -284,12 +331,12 @@
 
 <script>
 import axios from "axios";
-import lodashGet from 'lodash/get'
+import lodashGet from "lodash/get";
 const Fo = require("fibos.js");
 
 import Vue from "vue";
 import VueClipboard from "vue-clipboard2";
-// import forge from "node-forge";
+import forge from "node-forge";
 Vue.use(VueClipboard);
 const moment = require("moment");
 const Base64 = require("js-base64").Base64;
@@ -300,14 +347,15 @@ const foTestChain =
   "68cee14f598d88d340b50940b6ddfba28c444b46cd5f33201ace82c78896793a";
 
 const CONTRACT = "fdisfodollar";
-// const rsaPublicKey = `-----BEGIN PUBLIC KEY-----
-// MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDtf6zwW78U3O1SkqqPnrPWt1rn
-// ab+odxzSOV8wom1dT6j9ccj9wwoNO6E5MwsjWQjH4F7uLIFoZvSOtllxROGkbMqb
-// MmbdNLJHDNXBLhUfS8rJHowyc8XxZrvFgCA+B2JkCJpsD0bo3VPCHwwKKijzfZOm
-// aUmbIk/O6hZpgEwiMQIDAQAB
-// -----END PUBLIC KEY-----`;
+const FOCTC = "foaccountids";
+const rsaPublicKey = `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDtf6zwW78U3O1SkqqPnrPWt1rn
+ab+odxzSOV8wom1dT6j9ccj9wwoNO6E5MwsjWQjH4F7uLIFoZvSOtllxROGkbMqb
+MmbdNLJHDNXBLhUfS8rJHowyc8XxZrvFgCA+B2JkCJpsD0bo3VPCHwwKKijzfZOm
+aUmbIk/O6hZpgEwiMQIDAQAB
+-----END PUBLIC KEY-----`;
 
-// const pKeyEncrypt = forge.pki.publicKeyFromPem(rsaPublicKey);
+const pKeyEncrypt = forge.pki.publicKeyFromPem(rsaPublicKey);
 
 export default {
   name: CONTRACT,
@@ -378,7 +426,7 @@ export default {
       account: {},
       ruleShow: false,
       tranHash: false,
-      tranTitle: '',
+      tranTitle: "",
       tranMsg: "",
       mintValue: 0,
       tranText: "text-success",
@@ -454,6 +502,8 @@ export default {
       selected: "FO",
       auctionMints: [],
       myCMints: [],
+      myFDWds: [],
+      swapFDAmount: 0,
     };
   },
   methods: {
@@ -473,9 +523,9 @@ export default {
         this.tranMsg = msg;
       }
       if (title) {
-        this.tranTitle = title
+        this.tranTitle = title;
       } else {
-        this.tranTitle = ''
+        this.tranTitle = "";
       }
       if (text) {
         this.tranText = text;
@@ -487,9 +537,12 @@ export default {
       this.getMints();
       this.getMyCMints();
       this.getMyBalance();
+      this.getMyFDWds()
     },
     errMsg(e) {
-      return typeof e === 'string' ? lodashGet(e.match(/Error: ([\S\s]*?)at/), '[1]', e) : JSON.stringify(e)
+      return typeof e === "string"
+        ? lodashGet(e.match(/Error: ([\S\s]*?)at/), "[1]", e)
+        : JSON.stringify(e);
     },
     async mintFD() {
       this.buttonSpiner = true;
@@ -609,6 +662,57 @@ export default {
       this.reflesh();
       this.buttonSpiner = false;
     },
+    async outToUSDT() {
+      if (!this.cexAccount || this.cexAccount.length !== 34 || this.cexAccount[0] !== 'T') {
+        this.tranModal(true, '请输入(波场trx账号', 'text-danger')
+        return
+      }
+      await this.getTrxUsdt()
+      // if (Number(this.trxUsdt) < Number(this.swapFDAmount)) {
+      //   this.tranModal(true, '额度不够，请等候或邮件联系', 'text-danger')
+      //   return
+      // }
+
+      this.buttonSpiner = true
+      const memo = pKeyEncrypt.encrypt(this.cexAccount.trim(), 'RSA-OAEP')
+      try {
+        const contract = await this.fo.contract("eosio.token", {
+          requiredFields: this.requiredFields,
+        });
+        const trx = await contract.extransfer(
+          this.account.name,
+          FOCTC,
+          `${(Number(this.swapFDAmount)).toFixed(6)} FD@${CONTRACT}`,
+          btoa(memo),
+          {
+            authorization: `${this.account.name}@active`,
+          }
+        );
+        this.tranModal(true, '确认成功，订单转账成功！', 'text-success')
+        console.log(trx)
+      } catch (e) {
+        this.tranModal(true, this.errMsg(e), "text-danger", "转换失败！");
+      }
+      this.reflesh()
+      this.buttonSpiner = false
+    },
+    async getFDByUSDT(item) {
+      this.buttonSpiner = true;
+      try {
+        const trx = await this.fo.transfer(
+          this.account.name,
+          FOCTC,
+          `${item.amount.split(' ')[0]} FOUSDT`,
+          `1,${item.id}`
+        );
+        this.tranModal(true, "返回成功！", "text-success");
+        console.log(trx);
+      } catch (e) {
+        this.tranModal(true, this.errMsg(e), "text-danger", "返回失败！");
+      }
+      this.reflesh();
+      this.buttonSpiner = false;
+    },
     async getTrxUsdt() {
       const res = await axios.get(
         "https://apilist.tronscan.io/api/account?address=TUBMNBBsAMvPZLSiYeZoQ5MtJNARBb8v9D"
@@ -679,7 +783,7 @@ export default {
         );
         return {
           ...item,
-          feedValue: feedValue > 0 ? feedValue: 0,
+          feedValue: feedValue > 0 ? feedValue : 0,
           realRate:
             (item.amount.split(" ")[0] * this.foPrice) /
             item.value.split(" ")[0],
@@ -736,6 +840,27 @@ export default {
       });
       return token.rows;
     },
+    async getMyFDWds() {
+      let token;
+      try {
+        token = await this.fo.getTableRows(
+          true,
+          FOCTC,
+          FOCTC,
+          "fdwds",
+          "account",
+          this.account.name,
+          this.account.name,
+          100,
+          "i64",
+          "2"
+        );
+      } catch (e) {
+        return null;
+      }
+      this.myFDWds = token.rows;
+      return token.rows;
+    },
     login() {
       this.reqIronman();
     },
@@ -785,6 +910,7 @@ export default {
         );
         if (myFD) {
           this.myFD = myFD;
+          this.swapFDAmount = myFD.balance.quantity.split(' ')[0]
         }
         const myFO = this.contractBalance.find(
           (e) => e.balance.quantity.split(" ")[1] == "FO"
@@ -805,7 +931,6 @@ export default {
     },
     async reqIronman() {
       const ironman = this.ironman;
-      // ironman.requireVersion(1.2);
       const foNetwork = this.network[this.selectNet];
 
       const RequirefoNetwork = {
@@ -855,6 +980,7 @@ export default {
         this.getMyBalance();
         this.getMyMints();
         this.getMyCMints();
+        this.getMyFDWds()
       } catch (e) {
         console.log("error", e);
       }
