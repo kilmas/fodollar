@@ -238,7 +238,7 @@
                   class="flex-column align-items-start"
                 >
                   <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">{{ item.amount }}</h6>
+                    <h6 class="mb-1">ID:{{item.id}}｜金额:{{ item.amount }}</h6>
                     <small>状态:{{ item.wdid === '0000000000000000000000000000000000000000000000000000000000000000' ? '未转账': '已转账'}}</small>
                   </div>
                   <p class="mb-1">
@@ -252,8 +252,60 @@
                     @click="getFDByUSDT(item)"
                     variant="primary"
                     :disabled="item.wdid === '0000000000000000000000000000000000000000000000000000000000000000'"
-                    >还USDT返回FD</b-button
+                    >链上还USDT返回FD</b-button
                   >
+                  <div>
+                  <h6 class="mt-1">链外还USDT返回FD</h6>
+                  <!-- Using modifiers -->
+                  <b-button size="sm" variant="info" v-b-toggle.collapse-1 class="m-1">Okex内部转账还款</b-button>
+
+                  <!-- Using value -->
+                  <b-button size="sm" variant="info" v-b-toggle="'collapse-2'" class="m-1">币安链memo提现还款</b-button>
+
+                  <!-- Element to collapse -->
+                  <b-collapse id="collapse-1" accordion="my-accordion">
+                    <b-card>
+                      <b-alert show variant="primary">okex内部转账到：{{Number(item.amount.split(' ')[0]).toFixed(3)}}{{`${item.id}`.padStart(5, '0')}} USDT 到 fd@qingah.com</b-alert>
+                      <b-alert show variant="danger">转账金额小数点后5位为你的还款ID，okex内部转账务必确认小数点后面还款ID，否则链外还FD无法生效</b-alert>
+                      <b-input-group size="md" prepend="To okex">
+                        <b-form-input v-model="copyAccount" disabled></b-form-input>
+                        <b-input-group-append>
+                          <b-button variant="primary" size="sm" v-clipboard:copy="copyAccount" v-clipboard:success="onCopyAccount" v-clipboard:error="onError">复制该账号</b-button>
+                        </b-input-group-append>
+                      </b-input-group>
+                      <b-input-group size="md" class="mt-2" prepend="USDT">
+                        <b-form-input :value="`${Number(item.amount.split(' ')[0]).toFixed(3)}${String(item.id).padStart(5, '0')}`" disabled></b-form-input>
+                        <b-input-group-append>
+                          <!-- <b-button size="sm" variant="danger" v-clipboard:copy="item.id" v-clipboard:success="onCopyID" v-clipboard:error="onError">.{{ accountID }}</b-button> -->
+                          <b-button size="sm" variant="primary" v-clipboard:copy="`${Number(item.amount.split(' ')[0]).toFixed(3)}${String(item.id).padStart(5, '0')}`" v-clipboard:success="onCopyAmount" v-clipboard:error="onError">复制该金额</b-button>
+                        </b-input-group-append>
+                      </b-input-group>
+                    </b-card>
+                  </b-collapse>
+                  <b-collapse id="collapse-2" accordion="my-accordion">
+                    <b-card>
+                      <b-alert show>币安直接提币到币安链以下账号，memo务必填写该订单ID：{{ item.id }}</b-alert>
+                      <b-input-group size="sm">
+                        <b-form-input size="sm" v-model="copyBNAddress" disabled></b-form-input>
+                        <b-input-group-append>
+                          <b-button variant="primary" size="sm" v-clipboard:copy="copyBNAddress" v-clipboard:success="onCopyAccount" v-clipboard:error="onError">复制</b-button>
+                        </b-input-group-append>
+                      </b-input-group>
+                      <b-input-group size="sm" class="mt-2" prepend="USDT">
+                        <b-form-input size="sm" :value="`${item.amount.split(' ')[0]}`" disabled></b-form-input>
+                        <b-input-group-append>
+                          <b-button size="sm" variant="primary" v-clipboard:copy="`${item.amount.split(' ')[0]}`" v-clipboard:success="onCopyAmount" v-clipboard:error="onError">复制金额</b-button>
+                        </b-input-group-append>
+                      </b-input-group>
+                      <b-input-group size="sm" class="mt-2" prepend="memo">
+                        <b-form-input size="sm" :value="`${item.id}`" disabled></b-form-input>
+                        <b-input-group-append>
+                          <b-button size="sm" variant="primary" v-clipboard:copy="`${item.id}`" v-clipboard:success="onCopyAmount" v-clipboard:error="onError">复制ID</b-button>
+                        </b-input-group-append>
+                      </b-input-group>
+                    </b-card>
+                  </b-collapse>
+                </div>
                 </b-list-group-item>
               </b-list-group>
             </div>
@@ -262,8 +314,8 @@
       </div>
       <footer class="d-flex justify-content-center">
         <p>
-          问题或反馈(大额需求:<a href="mailto:wallet@qingah.com"
-            >wallet@qingah.com</a
+          问题或反馈(额度需求:<a href="mailto:fd@qingah.com"
+            >fd@qingah.com</a
           >
         </p>
       </footer>
@@ -275,7 +327,7 @@
       :title="tranTitle"
       hide-footer
     >
-      <div :class="tranText">{{ tranMsg }}</div>
+      <div :class="tranText" style="word-wrap: break-word">{{ tranMsg }}</div>
     </b-modal>
     <b-modal
       id="bv-modal-example"
@@ -490,7 +542,7 @@ export default {
       },
       copyData: "https://fd.qingah.com",
       copyAmount: "10",
-      copyAccount: "wallet@qingah.com",
+      copyAccount: "fd@qingah.com",
       copyBNAddress: "bnb144y5kxf3rwkkrem6zhvgcu95eneuwxwpwrzsa3",
       myBalance: [],
       buttonSpiner: false,
@@ -918,6 +970,30 @@ export default {
         if (myFO) {
           this.myFO = myFO;
         }
+      }
+    },
+    onCopy(e) {
+      if (e.action === 'copy') {
+        this.tranModal(true, '复制成功：' + e.text, 'text-success')
+      }
+    },
+    onCopyID(e) {
+      if (e.action === 'copy') {
+        this.tranModal(true, '复制成功：' + e.text, 'text-success')
+      }
+    },
+    onCopyAccount(e) {
+      if (e.action === 'copy') {
+        this.tranModal(true, '复制成功：' + e.text, 'text-success')
+      }
+    },
+    onCopyAmount(e) {
+      // if (this.accountID === '') {
+      //   this.tranModal(true, '你未设置ID,请勿转账!', 'text-warning')
+      //   return
+      // }
+      if (e.action === 'copy') {
+        this.tranModal(true, '复制成功：' + e.text, 'text-success')
       }
     },
     initIronman() {
