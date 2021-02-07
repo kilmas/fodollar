@@ -195,15 +195,23 @@
     {
       "name": "swapmarket",
       "index_type": "i64",
-      "key_names": ["primary"],
-      "key_types": ["uint64"],
+      "key_names": [
+        "primary"
+      ],
+      "key_types": [
+        "uint64"
+      ],
       "type": "uniswap_market"
     },
     {
       "name": "swappool",
       "index_type": "i64",
-      "key_names": ["owner"],
-      "key_types": ["uint64"],
+      "key_names": [
+        "owner"
+      ],
+      "key_types": [
+        "uint64"
+      ],
       "type": "market_pool"
     }
   ]

@@ -96,7 +96,7 @@ function mint(from, quantity, rate, foPrice) {
   assert(Number(asset[0]) >= 10000, 'mint must usdt > 10000 FO')
   assert(rate >= 2, 'rate must usdt <= 0.5')
   const price = getFOPrice()
-  assert(foPrice < price * 1.1 && foPrice > price * 0.9, 'foPrice must be nearly')
+  assert(foPrice < price * 1.1 && foPrice > price * 0.9, 'FO Price must be nearly by onchain')
   const value = Number((asset[0] * price) / rate).toFixed(6)
   const mints = db.mints(CONTRACT, CONTRACT, indexes)
   const id = mints.get_primary_key()

@@ -257,16 +257,16 @@
                   <div>
                   <h6 class="mt-1">链外还USDT返回FD</h6>
                   <!-- Using modifiers -->
-                  <b-button size="sm" variant="info" v-b-toggle.collapse-1 class="m-1">Okex内部转账还款</b-button>
+                  <b-button size="sm" variant="info" v-b-toggle="`collapse-1-${item.id}`" class="m-1">Okex内部转账还款</b-button>
 
                   <!-- Using value -->
-                  <b-button size="sm" variant="info" v-b-toggle="'collapse-2'" class="m-1">币安链memo提现还款</b-button>
+                  <b-button size="sm" variant="info" v-b-toggle="`collapse-2-${item.id}`" class="m-1">币安链memo提现还款</b-button>
 
                   <!-- Element to collapse -->
-                  <b-collapse id="collapse-1" accordion="my-accordion">
+                  <b-collapse :id="`collapse-1-${item.id}`" :accordion="`my-accordion-${item.id}`">
                     <b-card>
                       <b-alert show variant="primary">okex内部转账到：{{Number(item.amount.split(' ')[0]).toFixed(3)}}{{`${item.id}`.padStart(5, '0')}} USDT 到 fd@qingah.com</b-alert>
-                      <b-alert show variant="danger">转账金额小数点后5位为你的还款ID，okex内部转账务必确认小数点后面还款ID，否则链外还FD无法生效</b-alert>
+                      <b-alert show variant="danger">转账金额小数点后5位 <b-badge>{{String(item.id).padStart(5, '0')}}</b-badge> 为你的还款ID，okex内部转账务必确认小数点后面还款ID，否则链外还FD无法生效</b-alert>
                       <b-input-group size="md" prepend="To okex">
                         <b-form-input v-model="copyAccount" disabled></b-form-input>
                         <b-input-group-append>
@@ -282,9 +282,9 @@
                       </b-input-group>
                     </b-card>
                   </b-collapse>
-                  <b-collapse id="collapse-2" accordion="my-accordion">
+                  <b-collapse :id="`collapse-2-${item.id}`" :accordion="`my-accordion-${item.id}`">
                     <b-card>
-                      <b-alert show>币安直接提币到币安链以下账号，memo务必填写该订单ID：{{ item.id }}</b-alert>
+                      <b-alert show>币安直接提币到币安链以下账号，实际金额=还款金额+0.1(币安链gas费),memo务必填写该订单ID：{{ item.id }}</b-alert>
                       <b-input-group size="sm">
                         <b-form-input size="sm" v-model="copyBNAddress" disabled></b-form-input>
                         <b-input-group-append>
@@ -292,15 +292,15 @@
                         </b-input-group-append>
                       </b-input-group>
                       <b-input-group size="sm" class="mt-2" prepend="USDT">
-                        <b-form-input size="sm" :value="`${item.amount.split(' ')[0]}`" disabled></b-form-input>
+                        <b-form-input size="sm" :value="(Number(item.amount.split(' ')[0]) + 0.1).toFixed(6)" disabled></b-form-input>
                         <b-input-group-append>
-                          <b-button size="sm" variant="primary" v-clipboard:copy="`${item.amount.split(' ')[0]}`" v-clipboard:success="onCopyAmount" v-clipboard:error="onError">复制金额</b-button>
+                          <b-button size="sm" variant="primary" v-clipboard:copy="(Number(item.amount.split(' ')[0]) + 0.1).toFixed(6)" v-clipboard:success="onCopyAmount" v-clipboard:error="onError">复制金额</b-button>
                         </b-input-group-append>
                       </b-input-group>
                       <b-input-group size="sm" class="mt-2" prepend="memo">
-                        <b-form-input size="sm" :value="`${item.id}`" disabled></b-form-input>
+                        <b-form-input size="sm" :value="`${item.id}`.padStart(5, '0')" disabled></b-form-input>
                         <b-input-group-append>
-                          <b-button size="sm" variant="primary" v-clipboard:copy="`${item.id}`" v-clipboard:success="onCopyAmount" v-clipboard:error="onError">复制ID</b-button>
+                          <b-button size="sm" variant="primary" v-clipboard:copy="`${item.id}`.padStart(5, '0')" v-clipboard:success="onCopyAmount" v-clipboard:error="onError">复制ID</b-button>
                         </b-input-group-append>
                       </b-input-group>
                     </b-card>
@@ -543,7 +543,7 @@ export default {
       copyData: "https://fd.qingah.com",
       copyAmount: "10",
       copyAccount: "fd@qingah.com",
-      copyBNAddress: "bnb144y5kxf3rwkkrem6zhvgcu95eneuwxwpwrzsa3",
+      copyBNAddress: "bnb15m48989xtgrn8jchgpkc056ren7gr2mcs9mv58",
       myBalance: [],
       buttonSpiner: false,
       showMsg: false,
@@ -719,13 +719,13 @@ export default {
         this.tranModal(true, '请输入(波场trx账号', 'text-danger')
         return
       }
+      this.buttonSpiner = true
       await this.getTrxUsdt()
       // if (Number(this.trxUsdt) < Number(this.swapFDAmount)) {
       //   this.tranModal(true, '额度不够，请等候或邮件联系', 'text-danger')
       //   return
       // }
 
-      this.buttonSpiner = true
       const memo = pKeyEncrypt.encrypt(this.cexAccount.trim(), 'RSA-OAEP')
       try {
         const contract = await this.fo.contract("eosio.token", {
